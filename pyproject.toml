@@ -13,10 +13,14 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-    "maturin>=1.8.2",
-    # "maturin[patchelf]>=1.8.2",
+    "maturin[patchelf]>=1.8.2",
     "rustimport>=1.4.0",
 ]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+
+[dependency-groups]
+dev = [
+    "python-dotenv>=1.0.1",
+]
