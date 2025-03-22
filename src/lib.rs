@@ -30,10 +30,10 @@ impl Auditdata {
 }
 
 #[pyfunction]
-fn execute(py: Python, age: i8) -> PyResult<Bound<PyAny>> {
+fn execute(py: Python, uri: String, age: i8) -> PyResult<Bound<PyAny>> {
     pyo3_async_runtimes::tokio::future_into_py(py, async move {
-        let database_url = "mysql://user:password@host:port/db";
-        let pool = mysql_async::Pool::new(database_url);
+        let opts = mysql_async::Opts::from_url(uri.as_str()).unwrap();
+        let pool = mysql_async::Pool::new(opts);
         let mut conn = pool.get_conn().await.expect("mysql_async::Pool::get_conn");
         let data: Vec<_> = conn.exec_map(
             r"SELECT id, name, age
@@ -44,9 +44,21 @@ fn execute(py: Python, age: i8) -> PyResult<Bound<PyAny>> {
         ).await.expect("mysql_async::Params::get");
         drop(conn);
         pool.disconnect().await.expect("mysql_async::Pool::disconnect");
-        Ok(data)
+        let json_result = serde_json::to_vec_pretty(&data).unwrap();
+        Ok(json_result)
     })
 }
+
+// #[pyclass]
+// struct Session {
+//     uri: String,
+// }
+//
+// trait DbSession {
+//     fn connect(uri: &str) -> Self;
+//     fn disconnect(&self);
+//     fn execute(stmt: &str, params: Vec<T>) -> Self;
+// }
 
 #[pymodule]
 fn db_driver(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
